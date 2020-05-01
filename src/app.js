@@ -4,7 +4,9 @@ const morgan = require('morgan')
 const cors = require('cors')
 const helmet = require('helmet')
 const { NODE_ENV } = require('./config')
-const winston = require('winston')
+const { v4: uuid } = require('uuid')
+const cardRouter = require('./card/card-router')
+const listRouter = require('./list/list-router')
 
 const app = express()
 
@@ -13,36 +15,10 @@ const morganOption = (NODE_ENV === 'production')
   ? 'tiny'
   : 'common';
 
- 
-const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.json(),
-    transports: [
-      new winston.transports.File({ filename: 'info.log' })
-    ]
-  });
-  
-  if (NODE_ENV !== 'production') {
-    logger.add(new winston.transports.Console({
-      format: winston.format.simple()
-    }));
-  }
 
 app.use(morgan(morganOption))
 app.use(helmet())
 app.use(cors())
-app.use(express.json())
-
-const cards = [{
-    id: 1,
-    title: 'Task One',
-    content: 'This is card one'
-}];
-const lists = [{
-    id: 1,
-    header: 'List One',
-    cardIds: [1]
-}];
 
 app.use(function validateBearerToken(req, res, next) {
     const apiToken = process.env.API_TOKEN
@@ -56,16 +32,8 @@ app.use(function validateBearerToken(req, res, next) {
     next()
 })
 
-app.get('/', (req, res) => {
-    res.send('Hello, world!')
-})
-
-app.get('/card', (req, res) => {
-    res.json(cards);
-})
-app.get('/list', (req, res) => {
-    res.json(lists);
-})
+app.use(cardRouter)
+app.use(listRouter)
 
 app.use(function errorHandler(error, req, res, next) {
     let response
